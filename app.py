@@ -1,6 +1,7 @@
 # ============================================
 # app.py
-# Streamlit RNN Sentiment Analysis Web App
+# Streamlit RNN Sentiment Analysis App
+# Updated Version (Without NLTK Errors)
 # ============================================
 
 # ============================================
@@ -12,11 +13,7 @@ import pandas as pd
 import numpy as np
 import string
 import pickle
-import nltk
 import tensorflow as tf
-
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
@@ -42,13 +39,6 @@ from tensorflow.keras.layers import (
 )
 
 # ============================================
-# Download NLTK Resources
-# ============================================
-
-nltk.download('punkt')
-nltk.download('stopwords')
-
-# ============================================
 # Streamlit Page Configuration
 # ============================================
 
@@ -68,6 +58,74 @@ uploaded_file = st.file_uploader(
     "Upload CSV Dataset",
     type=["csv"]
 )
+
+# ============================================
+# Stopwords List
+# ============================================
+
+stop_words = {
+
+    'i', 'me', 'my', 'myself', 'we', 'our',
+    'ours', 'ourselves', 'you', 'your',
+    'yours', 'yourself', 'yourselves', 'he',
+    'him', 'his', 'himself', 'she', 'her',
+    'hers', 'herself', 'it', 'its',
+    'itself', 'they', 'them', 'their',
+    'theirs', 'themselves', 'what', 'which',
+    'who', 'whom', 'this', 'that', 'these',
+    'those', 'am', 'is', 'are', 'was',
+    'were', 'be', 'been', 'being', 'have',
+    'has', 'had', 'having', 'do', 'does',
+    'did', 'doing', 'a', 'an', 'the',
+    'and', 'but', 'if', 'or', 'because',
+    'as', 'until', 'while', 'of', 'at',
+    'by', 'for', 'with', 'about', 'against',
+    'between', 'into', 'through', 'during',
+    'before', 'after', 'above', 'below',
+    'to', 'from', 'up', 'down', 'in',
+    'out', 'on', 'off', 'over', 'under',
+    'again', 'further', 'then', 'once',
+    'here', 'there', 'when', 'where', 'why',
+    'how', 'all', 'any', 'both', 'each',
+    'few', 'more', 'most', 'other', 'some',
+    'such', 'no', 'nor', 'not', 'only',
+    'own', 'same', 'so', 'than', 'too',
+    'very', 'can', 'will', 'just'
+}
+
+# ============================================
+# Simple Tokenizer
+# ============================================
+
+def simple_tokenizer(text):
+    return text.split()
+
+# ============================================
+# Text Preprocessing Function
+# ============================================
+
+def preprocess_text(text):
+
+    # Convert to lowercase
+    text = text.lower()
+
+    # Remove punctuation
+    text = text.translate(
+        str.maketrans('', '', string.punctuation)
+    )
+
+    # Tokenization
+    words = simple_tokenizer(text)
+
+    # Remove stopwords
+    filtered_words = [
+
+        word for word in words
+        if word not in stop_words
+
+    ]
+
+    return " ".join(filtered_words)
 
 # ============================================
 # Proceed if File Uploaded
@@ -109,36 +167,11 @@ if uploaded_file is not None:
     # Text Preprocessing
     # ========================================
 
-    stop_words = set(stopwords.words('english'))
-
-    def preprocess_text(text):
-
-        # Lowercase
-        text = text.lower()
-
-        # Remove punctuation
-        text = text.translate(
-            str.maketrans('', '', string.punctuation)
-        )
-
-        # Tokenization
-        words = word_tokenize(text)
-
-        # Stopword removal
-        filtered_words = [
-            word for word in words
-            if word not in stop_words
-        ]
-
-        return " ".join(filtered_words)
-
-    # ========================================
-    # Apply Preprocessing
-    # ========================================
-
     texts = df[text_column].astype(str)
 
-    cleaned_texts = texts.apply(preprocess_text)
+    cleaned_texts = texts.apply(
+        preprocess_text
+    )
 
     st.subheader("Preprocessed Text Example")
 
@@ -149,7 +182,7 @@ if uploaded_file is not None:
     st.write(cleaned_texts.iloc[0])
 
     # ========================================
-    # Tokenization & Sequence Preparation
+    # Task 3 — Sequence Preparation
     # ========================================
 
     st.header("Task 3 — Sequence Preparation")
@@ -157,8 +190,8 @@ if uploaded_file is not None:
     st.write("""
     ### Why RNN Cannot Understand Raw Text
 
-    RNN models only understand numerical values.
-    Raw text contains words and sentences that must be converted into numbers.
+    RNN models only understand numbers.
+    Text data must be converted into numerical form.
 
     Steps:
     1. Tokenization
@@ -166,14 +199,26 @@ if uploaded_file is not None:
     3. Sequence Conversion
     4. Padding
 
-    This helps the RNN process sequential information.
+    This helps RNN learn sequential patterns.
     """)
+
+    # ========================================
+    # Tokenization
+    # ========================================
 
     tokenizer = Tokenizer()
 
-    tokenizer.fit_on_texts(cleaned_texts)
+    tokenizer.fit_on_texts(
+        cleaned_texts
+    )
 
-    vocab_size = len(tokenizer.word_index) + 1
+    vocab_size = len(
+        tokenizer.word_index
+    ) + 1
+
+    # ========================================
+    # Text to Sequences
+    # ========================================
 
     sequences = tokenizer.texts_to_sequences(
         cleaned_texts
@@ -193,7 +238,7 @@ if uploaded_file is not None:
     st.write("Sample Sequence:")
     st.write(sequences[0])
 
-    st.write("Padded Shape:")
+    st.write("Padded Sequence Shape:")
     st.write(padded_sequences.shape)
 
     # ========================================
@@ -206,7 +251,9 @@ if uploaded_file is not None:
         df[label_column]
     )
 
-    num_classes = len(np.unique(labels))
+    num_classes = len(
+        np.unique(labels)
+    )
 
     st.write("Number of Classes:", num_classes)
 
@@ -222,21 +269,19 @@ if uploaded_file is not None:
     )
 
     # ========================================
-    # Task 4 — Build Simple RNN
+    # Task 4 — Build RNN Architecture
     # ========================================
 
     st.header("Task 4 — Build Simple RNN Architecture")
 
     model = Sequential([
 
-        # Embedding Layer
         Embedding(
             input_dim=vocab_size,
             output_dim=128,
             input_length=max_length
         ),
 
-        # Simple RNN Layer
         SimpleRNN(
             128,
             activation='tanh'
@@ -244,32 +289,36 @@ if uploaded_file is not None:
 
         Dropout(0.5),
 
-        # Output Layer
         Dense(
             num_classes,
             activation='softmax'
         )
     ])
 
+    # ========================================
+    # Compile Model
+    # ========================================
+
     model.compile(
+
         optimizer='adam',
+
         loss='sparse_categorical_crossentropy',
+
         metrics=['accuracy']
     )
-
-    st.text(model.summary())
 
     st.write("""
     ### Architecture Explanation
 
     - Embedding Layer:
-      Converts words into dense vectors.
+      Converts words into vectors.
 
     - SimpleRNN Layer:
-      Learns sequential relationships.
+      Learns sequential patterns.
 
     - Dense Layer:
-      Predicts sentiment class.
+      Predicts final sentiment class.
     """)
 
     # ========================================
@@ -296,11 +345,16 @@ if uploaded_file is not None:
         with st.spinner("Training Model..."):
 
             history = model.fit(
+
                 X_train,
                 y_train,
+
                 epochs=epochs,
+
                 batch_size=batch_size,
+
                 validation_split=0.2,
+
                 verbose=1
             )
 
@@ -312,7 +366,9 @@ if uploaded_file is not None:
 
         st.header("Task 6 — Model Evaluation")
 
-        predictions = model.predict(X_test)
+        predictions = model.predict(
+            X_test
+        )
 
         predicted_labels = np.argmax(
             predictions,
@@ -347,17 +403,23 @@ if uploaded_file is not None:
             predicted_labels
         )
 
-        st.write("### Evaluation Metrics")
+        st.write("### Accuracy")
+        st.write(accuracy)
 
-        st.write("Accuracy:", accuracy)
-        st.write("Precision:", precision)
-        st.write("Recall:", recall)
-        st.write("F1 Score:", f1)
+        st.write("### Precision")
+        st.write(precision)
+
+        st.write("### Recall")
+        st.write(recall)
+
+        st.write("### F1 Score")
+        st.write(f1)
 
         st.write("### Confusion Matrix")
         st.write(cm)
 
         st.write("### Classification Report")
+
         st.text(
             classification_report(
                 y_test,
@@ -374,39 +436,39 @@ if uploaded_file is not None:
         st.write("""
         ### How RNN Remembers Previous Words
 
-        RNN processes words one-by-one in sequence.
+        RNN processes text word-by-word.
 
-        It stores information from previous words
-        using something called a Hidden State.
+        It remembers previous words using
+        a hidden memory called Hidden State.
 
         Example:
-        'I am feeling very happy today'
+        "I am very happy today"
 
-        The model remembers earlier words while
-        reading later words.
+        The model understands context
+        from earlier words.
 
         ### Hidden State Concept
 
-        Hidden State acts like memory.
+        Hidden State stores past information.
 
-        At every time step:
+        At every step:
         - Current word is processed
-        - Previous hidden state is combined
-        - New hidden state is generated
+        - Previous memory is combined
+        - New memory is generated
 
         ### Sequential Learning Behavior
 
-        RNN learns patterns based on order.
+        Word order matters in RNN.
 
         Example:
-        - 'I am happy'
-        - 'I am not happy'
+        - "I am happy"
+        - "I am not happy"
 
-        Word order changes meaning.
+        Both sentences have different meanings.
         """)
 
         # ====================================
-        # Real-Time Prediction
+        # Task 8 — Real-Time Prediction
         # ====================================
 
         st.header("Task 8 — Real-Time Prediction")
@@ -415,64 +477,48 @@ if uploaded_file is not None:
             "Enter Sentence"
         )
 
+        # ====================================
+        # Prediction Function
+        # ====================================
+
+        def predict_sentiment(text):
+
+            cleaned_text = preprocess_text(
+                text
+            )
+
+            sequence = tokenizer.texts_to_sequences(
+                [cleaned_text]
+            )
+
+            padded = pad_sequences(
+                sequence,
+                maxlen=max_length,
+                padding='post',
+                truncating='post'
+            )
+
+            prediction = model.predict(
+                padded
+            )
+
+            predicted_class = np.argmax(
+                prediction
+            )
+
+            sentiment = encoder.inverse_transform(
+                [predicted_class]
+            )[0]
+
+            confidence = np.max(prediction)
+
+            return sentiment, confidence
+
+        # ====================================
+        # Predict Button
+        # ====================================
+
         if st.button("Predict Sentiment"):
-
-            def predict_sentiment(text):
-
-                # Lowercase
-                text = text.lower()
-
-                # Remove punctuation
-                text = text.translate(
-                    str.maketrans(
-                        '',
-                        '',
-                        string.punctuation
-                    )
-                )
-
-                # Tokenization
-                words = word_tokenize(text)
-
-                # Stopword removal
-                filtered_words = [
-                    word for word in words
-                    if word not in stop_words
-                ]
-
-                cleaned_text = ' '.join(
-                    filtered_words
-                )
-
-                # Convert to sequence
-                sequence = tokenizer.texts_to_sequences(
-                    [cleaned_text]
-                )
-
-                # Padding
-                padded = pad_sequences(
-                    sequence,
-                    maxlen=max_length,
-                    padding='post',
-                    truncating='post'
-                )
-
-                # Prediction
-                prediction = model.predict(
-                    padded
-                )
-
-                predicted_class = np.argmax(
-                    prediction
-                )
-
-                sentiment = encoder.inverse_transform(
-                    [predicted_class]
-                )[0]
-
-                confidence = np.max(prediction)
-
-                return sentiment, confidence
 
             sentiment, confidence = predict_sentiment(
                 user_input
@@ -505,31 +551,19 @@ if uploaded_file is not None:
 
         for sentence in sample_sentences:
 
-            sequence = tokenizer.texts_to_sequences(
-                [preprocess_text(sentence)]
+            sentiment, confidence = predict_sentiment(
+                sentence
             )
-
-            padded = pad_sequences(
-                sequence,
-                maxlen=max_length,
-                padding='post'
-            )
-
-            prediction = model.predict(
-                padded
-            )
-
-            predicted_class = np.argmax(
-                prediction
-            )
-
-            sentiment = encoder.inverse_transform(
-                [predicted_class]
-            )[0]
 
             st.write(f"Sentence: {sentence}")
+
             st.write(f"Prediction: {sentiment}")
-            st.write("-----")
+
+            st.write(
+                f"Confidence: {confidence:.4f}"
+            )
+
+            st.write("------")
 
         # ====================================
         # Task 9 — Save Model
@@ -540,33 +574,40 @@ if uploaded_file is not None:
         if st.button("Save Model Files"):
 
             # Save Model
-            model.save("rnn_sentiment_model.h5")
+            model.save(
+                "rnn_sentiment_model.h5"
+            )
 
             # Save Tokenizer
             with open(
                 "tokenizer.pkl",
                 "wb"
             ) as f:
-                pickle.dump(tokenizer, f)
 
-            # Save Encoder
+                pickle.dump(
+                    tokenizer,
+                    f
+                )
+
+            # Save Label Encoder
             with open(
                 "label_encoder.pkl",
                 "wb"
             ) as f:
-                pickle.dump(encoder, f)
 
-            st.success(
-                "Model, Tokenizer & Encoder Saved Successfully"
-            )
+                pickle.dump(
+                    encoder,
+                    f
+                )
 
-            st.write("""
-            Files Saved:
+            st.success("""
+            Files Saved Successfully
+
             - rnn_sentiment_model.h5
             - tokenizer.pkl
             - label_encoder.pkl
             """)
 
 # ============================================
-# End of App
+# END OF APP
 # ============================================
