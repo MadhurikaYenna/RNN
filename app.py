@@ -54,10 +54,7 @@ st.write("Text Classification using Simple RNN")
 # Upload Dataset
 # ============================================
 
-uploaded_file = st.file_uploader(
-    "Upload CSV Dataset",
-    type=["csv"]
-)
+uploaded_file = "combined_data_small.csv"
 
 # ============================================
 # Stopwords List
